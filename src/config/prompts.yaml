@@ -1,0 +1,24 @@
+llm_prompts:
+  segment: |
+    Clasificá el siguiente bloque de transcripción de radio (puede tener marcas de tiempo)
+    como PROGRAMA o ANUNCIO PUBLICITARIO.
+    Responde exactamente con una palabra: programa o anuncio.
+
+    Metadatos:
+    - voice_activity_ratio: {voice_ratio}
+    - silencios: {silences}
+
+    Transcripción:
+    {text}
+
+  window: |
+    Clasificá esta ventana de transcripción de radio ({start:.1f}–{end:.1f} segundos).
+    Responde exactamente con una palabra: programa o anuncio.
+
+    Metadatos:
+    - duración de la ventana: {duration:.1f} s
+    - voice_activity_ratio: {voice_ratio}
+    - silencios en la ventana: {silences}
+
+    Texto:
+    {text}

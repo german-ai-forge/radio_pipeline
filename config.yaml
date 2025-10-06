@@ -1,0 +1,82 @@
+# === Radio Data Lake Config ===
+# Set either stream_url (direct .m3u8/.mp3) OR stream_page_url (player page handled by streamlink).
+stream_url: "https://26643.live.streamtheworld.com/LA_RED_AM910AAC.aac?dist=triton-widget&tdsdk=js-2.9&swm=false&lat=-32.9&long=-68.9&pname=tdwidgets&pversion=2.9&banners=none&burst-time=15&sbmid=b33f8aa4-b4c6-4a4f-8a46-5fe2b556c1ca"
+stream_page_url: ""      # vacío (solo usaremos URL directa)
+program_duration_sec: 120   # PRUEBA: 2 minutos (después lo subimos a 7200)
+copy_mode: true             # intenta -c copy (sin recodificar)
+
+
+timezone: "America/Argentina/Mendoza"
+
+# Recording
+recording:
+  backend: "ffmpeg"
+  max_retries: 5
+  retry_delay_sec: 10
+  segment_time_sec: 600
+
+
+# Audio encoding
+copy_mode: true                    # try to copy codecs (no re-encode)
+aac_bitrate: "128k"
+mp3_bitrate: "160k"
+final_format: "mp3"                # "mp3" or "aac"; final assembled file
+
+# Transcription
+whisper:
+  enabled: true
+  backend: "cli"                   # "cli" | "faster" | "python"
+  model: "small"                   # "tiny"|"base"|"small"|"medium"|"large"
+  language: "es"
+  output_format: "vtt"
+
+# Heuristics for ad detection (textual)
+ad_heuristics:
+  min_hits_per_segment: 3
+  ratio_threshold: 0.35
+  patterns:
+    url: true
+    phone: true
+  keywords:
+    - "auspicia"
+    - "patrocina"
+    - "presenta"
+    - "oferta"
+    - "promoción"
+    - "descuento"
+    - "llamá al"
+    - "llamen al"
+    - "ingresá a"
+    - "visitanos en"
+    - "en nuestra web"
+    - "envío gratis"
+    - "válido hasta"
+    - "términos y condiciones"
+
+# Paths (relative to project root). Data lake style.
+paths:
+  data_root: "data"
+  bronze: "data/bronze"
+  silver: "data/silver"
+  gold: "data/gold"
+  logs: "logs"
+llm:
+  enabled: true
+  provider: "mistral"          # por ahora soportamos mistral
+  model: "mistral-small-latest"
+  # Máximo de caracteres de transcript que mandamos al LLM (para no gastar de más).
+  max_chars_per_segment: 9000
+  # Umbrales para decidir cuándo llamar al LLM:
+  heuristics_borderline:
+    min_hits_per_segment: 2     # si hits >=2 pero <3 (umbral “ad”), es dudoso
+    ratio_threshold_low: 0.20   # si ratio >=0.20 pero <0.35, es dudoso
+  # Opcional: tiempo de espera / reintentos
+  request_timeout_sec: 30
+  
+assembly:
+  mode: "lossless"            # "lossless" | "crossfade"
+  guard_band_sec: 0.12        # acolchado dentro del silencio
+  align_gap_threshold_sec: 0.5 # si gap < 0.5s, pegamos los bordes
+  min_keep_bridge_sec: 5.0    # keeps más cortos se absorben
+  crossfade_sec: 0.25         # si mode=crossfade
+  reencode_bitrate_aac: "128k"
